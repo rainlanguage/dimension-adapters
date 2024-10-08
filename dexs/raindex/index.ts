@@ -187,34 +187,42 @@ const abi = {
   "ClearV2": "event ClearV2(address sender, (address owner, (address interpreter, address store, bytes bytecode) evaluable, (address token, uint8 decimals, uint256 vaultId)[] validInputs, (address token, uint8 decimals, uint256 vaultId)[] validOutputs, bytes32 nonce) alice, (address owner, (address interpreter, address store, bytes bytecode) evaluable, (address token, uint8 decimals, uint256 vaultId)[] validInputs, (address token, uint8 decimals, uint256 vaultId)[] validOutputs, bytes32 nonce) bob, (uint256 aliceInputIOIndex, uint256 aliceOutputIOIndex, uint256 bobInputIOIndex, uint256 bobOutputIOIndex, uint256 aliceBountyVaultId, uint256 bobBountyVaultId) clearConfig)",
   "AfterClear": "event AfterClear(address sender, (uint256 aliceOutput, uint256 bobOutput, uint256 aliceInput, uint256 bobInput) clearStateChange)",
   "TakeOrderV2": "event TakeOrderV2(address sender, ((address owner, (address interpreter, address store, bytes bytecode) evaluable, (address token, uint8 decimals, uint256 vaultId)[] validInputs, (address token, uint8 decimals, uint256 vaultId)[] validOutputs, bytes32 nonce) order, uint256 inputIOIndex, uint256 outputIOIndex, (address signer, uint256[] context, bytes signature)[] signedContext) config, uint256 input, uint256 output)",
-  "Conext": "Context (address sender, uint256[][] context)"
+  "Context": "Context (address sender, uint256[][] context)"
 }
 
 
 const fetchRFQ: FetchV2 = async ({ getLogs, chain, createBalances, api, fromTimestamp, toTimestamp }) => {
-  const dailyVolume = createBalances()
+  const dailyVolume = createBalances();
 
-  // TakeOrderV2 and Context events happen on same tx, want both of them for txs across some timespan, like:
-  //   [
-  //     tx1
-  //     [
-  //         "TakeOrderV2-event",
-  //         "Conetxt-event"
-  //     ],
-  //     tx2
-  //     [
-  //         "TakeOrderV2-event",
-  //         "Conetxt-event"
-  //     ]
-  //   ]
-  // const logs = await getLogs({ target: orderbooks[chain].address, eventAbi: abi.TakeOrderV2, entireLog: true })
-  const logs = await api.getLogs({ target: orderbooks[api.chain].address, fromTimestamp, toTimestamp, eventAbi: TakeOrderV2Abi, entireLog: true })
-  console.log(logs);
+  // Fetch logs for TakeOrderV2 event
+  const logsTakeOrder = await api.getLogs({
+    target: orderbooks[api.chain].address,
+    fromTimestamp,
+    toTimestamp,
+    eventAbi: TakeOrderV2Abi,
+    entireLog: true
+  });
 
-  // add vol
-  // logs.forEach(log => dailyVolume.add("", ""))
-  return { dailyVolume }
-}
+  // Fetch logs for Context event
+  const logsContext = await api.getLogs({
+    target: orderbooks[api.chain].address,
+    fromTimestamp,
+    toTimestamp,
+    eventAbi: abi.Context, // Fetch logs for the Context event (typo fixed)
+    entireLog: true
+  });
+
+  // Log the events
+  console.log('TakeOrder Logs:', logsTakeOrder);
+  console.log('Context Logs:', logsContext);
+
+  // Optionally, you can combine these logs if they are related to the same transaction
+  const combinedLogs = [...logsTakeOrder, ...logsContext];
+  console.log('Combined Logs:', combinedLogs);
+
+  // Return daily volume unchanged and logs
+  return { dailyVolume };
+};
 
 
 const adapter1: BaseAdapter = {}
