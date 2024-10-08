@@ -208,7 +208,7 @@ const fetchRFQ: FetchV2 = async ({ getLogs, chain, createBalances, api, fromTime
   //     ]
   //   ]
   // const logs = await getLogs({ target: orderbooks[chain].address, eventAbi: abi.TakeOrderV2, entireLog: true })
-  const logs = await api.getLogs({ fromTimestamp, toTimestamp, eventAbi: TakeOrderV2Abi, entireLog: true })
+  const logs = await api.getLogs({ target: orderbooks[api.chain].address, fromTimestamp, toTimestamp, eventAbi: TakeOrderV2Abi, entireLog: true })
   console.log(logs);
 
   // add vol
